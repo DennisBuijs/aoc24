@@ -40,14 +40,38 @@ func main() {
 		right = append(right, rightVal)
 	}
 
+	// output := calculateTotalDistance(left, right)
+	output := calculateTotalSimilarityScore(left, right)
+
+	log.Println(output)
+}
+
+func calculateTotalDistance(left []int, right []int) int {
 	sort.Ints(left)
 	sort.Ints(right)
 
 	totalDistance := 0
 
-	for i := 0; i < inputSize; i++ {
+	for i := 0; i < len(left); i++ {
 		totalDistance += max(left[i], right[i]) - min(left[i], right[i])
 	}
 
-	log.Println(totalDistance)
+	return totalDistance
+}
+
+func calculateTotalSimilarityScore(left []int, right []int) int {
+	totalSimilarityScore := 0
+
+	for i := 0; i < len(left); i++ {
+		frequencyOfLeftItemInRightSlice := 0
+		for j := 0; j < len(right); j++ {
+			if left[i] == right[j] {
+				frequencyOfLeftItemInRightSlice++
+			}
+		}
+
+		totalSimilarityScore += left[i] * frequencyOfLeftItemInRightSlice
+	}
+
+	return totalSimilarityScore
 }
