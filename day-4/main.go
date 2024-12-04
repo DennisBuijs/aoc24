@@ -14,7 +14,7 @@ func main() {
 
 	defer file.Close()
 
-	gridHeight := 140
+	gridHeight := 10
 
 	grid := make([][]string, 0, gridHeight)
 
@@ -27,7 +27,9 @@ func main() {
 		grid = append(grid, line)
 	}
 
-	output := findAmountOfXmasInGrid(grid)
+	// output := findAmountOfXmasInGrid(grid)
+	output := findAmountOfMasInGrid(grid)
+
 	fmt.Println(output)
 }
 
@@ -81,6 +83,41 @@ func findAmountOfXmasInGrid(grid [][]string) int {
 			// Diagonal SW
 			if x-3 >= 0 && y+3 < gridHeight && grid[y+1][x-1] == "M" && grid[y+2][x-2] == "A" && grid[y+3][x-3] == "S" {
 				total++
+			}
+		}
+	}
+
+	return total
+}
+
+func findAmountOfMasInGrid(grid [][]string) int {
+	total := 0
+
+	gridHeight := len(grid)
+	gridWidth := len(grid[0])
+
+	for y := 0; y < gridHeight; y++ {
+		for x := 0; x < gridWidth; x++ {
+			if grid[y][x] != "A" {
+				continue
+			}
+
+			if x > 0 && y > 0 && x < gridWidth-1 && y < gridHeight-1 {
+				if grid[y-1][x-1] == "S" && grid[y-1][x+1] == "S" && grid[y+1][x-1] == "M" && grid[y+1][x+1] == "M" {
+					total++
+				}
+
+				if grid[y-1][x-1] == "M" && grid[y-1][x+1] == "M" && grid[y+1][x-1] == "S" && grid[y+1][x+1] == "S" {
+					total++
+				}
+
+				if grid[y-1][x-1] == "S" && grid[y-1][x+1] == "M" && grid[y+1][x-1] == "S" && grid[y+1][x+1] == "M" {
+					total++
+				}
+
+				if grid[y-1][x-1] == "M" && grid[y-1][x+1] == "S" && grid[y+1][x-1] == "M" && grid[y+1][x+1] == "S" {
+					total++
+				}
 			}
 		}
 	}
