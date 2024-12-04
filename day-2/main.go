@@ -43,37 +43,51 @@ func calculateAmountOfSafeReports(reports [][]int) int {
 	safeReports := 0
 
 	for _, report := range reports {
-		safe := false
-		increasing := report[0] < report[1]
-
-		for i := 0; i < len(report); i++ {
-			if i > 0 {
-				if difference(report[i], report[i-1]) > 3 {
-					safe = false
-					break
-				}
-
-				if increasing && report[i] < report[i-1] {
-					safe = false
-					break
-				}
-
-				if !increasing && report[i] > report[i-1] {
-					safe = false
-					break
-				}
-
-				if report[i] == report[i-1] {
-					safe = false
-					break
-				}
-
-				safe = true
-			}
+		levels := make([][]int, len(report)+1)
+		for i := range report {
+			level := make([]int, 0, len(report)-1)
+			level = append(level, report[:i]...)
+			level = append(level, report[i+1:]...)
+			levels[i] = level
 		}
 
-		if safe {
-			safeReports++
+		levels[len(levels)-1] = report
+
+		for _, level := range levels {
+			safe := false
+
+			increasing := level[0] < level[1]
+
+			for i := 0; i < len(level); i++ {
+				if i > 0 {
+					if difference(level[i], level[i-1]) > 3 {
+						safe = false
+						break
+					}
+
+					if increasing && level[i] < level[i-1] {
+						safe = false
+						break
+					}
+
+					if !increasing && level[i] > level[i-1] {
+						safe = false
+						break
+					}
+
+					if level[i] == level[i-1] {
+						safe = false
+						break
+					}
+
+					safe = true
+				}
+			}
+
+			if safe {
+				safeReports++
+				break
+			}
 		}
 	}
 
