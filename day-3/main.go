@@ -5,6 +5,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 func main() {
@@ -14,6 +15,12 @@ func main() {
 	}
 
 	input := string(raw)
+
+	// replace with count of "don't()"s in the input
+	amountOfDisableStatements := 36
+	for i := 0; i < amountOfDisableStatements; i++ {
+		input = strings.Replace(input, getDisabled(input), "", -1)
+	}
 
 	pattern := `mul\((\d{1,3}),(\d{1,3})\)`
 
@@ -33,4 +40,21 @@ func main() {
 	}
 
 	log.Println(total)
+}
+
+func getDisabled(str string) string {
+	start := "don't()"
+	end := "do()"
+
+	s := strings.Index(str, start)
+	if s == -1 {
+		return ""
+	}
+
+	e := strings.Index(str[s+len(start):], end)
+	if e == -1 {
+		return str[s:]
+	}
+
+	return str[s : s+len(start)+e]
 }
