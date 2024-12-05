@@ -6,18 +6,21 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func main() {
+	start := time.Now()
+
 	file, err := os.Open("input.txt")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	defer file.Close()
 
-	rules := make([][]int, 0)
-	manuals := make([][]int, 0)
+	rules := [][]int{}
+	manuals := [][]int{}
 
 	readingMode := "RULES"
 
@@ -36,8 +39,8 @@ func main() {
 		}
 	}
 
-	validManuals := make([][]int, 0)
-	invalidManuals := make([][]int, 0)
+	validManuals := [][]int{}
+	invalidManuals := [][]int{}
 
 	for _, manual := range manuals {
 		if isManualValid(manual, rules) {
@@ -54,14 +57,27 @@ func main() {
 
 	log.Println("Valid", outputForValidManuals)
 	log.Println("Invalid", outputForFixedInvalidManuals)
+
+	elapsed := time.Since(start)
+	log.Printf("Execution time: %s\n", elapsed)
 }
 
 func mapLineToRule(line string) []int {
 	parts := strings.Split(line, "|")
 
+	var err error
+
 	rule := make([]int, 2)
-	rule[0], _ = strconv.Atoi(parts[0])
-	rule[1], _ = strconv.Atoi(parts[1])
+
+	rule[0], err = strconv.Atoi(parts[0])
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	rule[1], err = strconv.Atoi(parts[1])
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	return rule
 }
@@ -105,38 +121,21 @@ func isManualValid(manual []int, rules [][]int) bool {
 }
 
 func isPageNumberBefore(manual []int, first int, second int) bool {
-	var firstIndex, secondIndex int
-	for i, pageNumber := range manual {
-		if pageNumber == first {
-			firstIndex = i
-		}
-
-		if pageNumber == second {
-			secondIndex = i
-		}
-	}
+	firstIndex, secondIndex := findPageNumberIndices(manual, first, second)
 
 	return firstIndex < secondIndex
 }
 
 func filterRulesForManual(manual []int, rules [][]int) [][]int {
-	result := make([][]int, 0)
+	pageSet := make(map[int]bool)
+	for _, pageNumber := range manual {
+		pageSet[pageNumber] = true
+	}
+
+	result := [][]int{}
 
 	for _, rule := range rules {
-		containsLeft := false
-		containsRight := false
-
-		for _, pageNumber := range manual {
-			if rule[0] == pageNumber {
-				containsLeft = true
-			}
-
-			if rule[1] == pageNumber {
-				containsRight = true
-			}
-		}
-
-		if containsLeft && containsRight {
+		if pageSet[rule[0]] && pageSet[rule[1]] {
 			result = append(result, rule)
 		}
 	}
@@ -145,10 +144,10 @@ func filterRulesForManual(manual []int, rules [][]int) [][]int {
 }
 
 func fixInvalidManuals(invalidManuals [][]int, rules [][]int) [][]int {
-	manuals := make([][]int, 0)
+	manuals := [][]int{}
 
-	for mI := 0; mI < len(invalidManuals); mI++ {
-		invalidManual := invalidManuals[mI]
+	for manualIndex := 0; manualIndex < len(invalidManuals); manualIndex++ {
+		invalidManual := invalidManuals[manualIndex]
 		relevantRules := filterRulesForManual(invalidManual, rules)
 
 		for i := 0; i < len(relevantRules); i++ {
@@ -160,7 +159,7 @@ func fixInvalidManuals(invalidManuals [][]int, rules [][]int) [][]int {
 		}
 
 		if !isManualValid(invalidManual, rules) {
-			mI = mI - 1
+			manualIndex = manualIndex - 1
 			continue
 		}
 
@@ -171,6 +170,15 @@ func fixInvalidManuals(invalidManuals [][]int, rules [][]int) [][]int {
 }
 
 func swap(manual []int, first int, second int) []int {
+	firstIndex, secondIndex := findPageNumberIndices(manual, first, second)
+
+	manual[firstIndex] = second
+	manual[secondIndex] = first
+
+	return manual
+}
+
+func findPageNumberIndices(manual []int, first int, second int) (int, int) {
 	var firstIndex, secondIndex int
 	for i, pageNumber := range manual {
 		if pageNumber == first {
@@ -182,8 +190,5 @@ func swap(manual []int, first int, second int) []int {
 		}
 	}
 
-	manual[firstIndex] = second
-	manual[secondIndex] = first
-
-	return manual
+	return firstIndex, secondIndex
 }
