@@ -37,16 +37,23 @@ func main() {
 	}
 
 	validManuals := make([][]int, 0)
+	invalidManuals := make([][]int, 0)
 
 	for _, manual := range manuals {
 		if isManualValid(manual, rules) {
 			validManuals = append(validManuals, manual)
+		} else {
+			invalidManuals = append(invalidManuals, manual)
 		}
 	}
 
-	output := calculateSumOfMiddlePageNumbers(validManuals)
+	outputForValidManuals := calculateSumOfMiddlePageNumbers(validManuals)
 
-	log.Println(output)
+	fixedInvalidManuals := fixInvalidManuals(invalidManuals, rules)
+	outputForFixedInvalidManuals := calculateSumOfMiddlePageNumbers(fixedInvalidManuals)
+
+	log.Println("Valid", outputForValidManuals)
+	log.Println("Invalid", outputForFixedInvalidManuals)
 }
 
 func mapLineToRule(line string) []int {
@@ -135,4 +142,48 @@ func filterRulesForManual(manual []int, rules [][]int) [][]int {
 	}
 
 	return result
+}
+
+func fixInvalidManuals(invalidManuals [][]int, rules [][]int) [][]int {
+	manuals := make([][]int, 0)
+
+	for mI := 0; mI < len(invalidManuals); mI++ {
+		invalidManual := invalidManuals[mI]
+		relevantRules := filterRulesForManual(invalidManual, rules)
+
+		for i := 0; i < len(relevantRules); i++ {
+			rule := relevantRules[i]
+			if !isPageNumberBefore(invalidManual, rule[0], rule[1]) {
+				invalidManual = swap(invalidManual, rule[0], rule[1])
+				i = 0
+			}
+		}
+
+		if !isManualValid(invalidManual, rules) {
+			mI = mI - 1
+			continue
+		}
+
+		manuals = append(manuals, invalidManual)
+	}
+
+	return manuals
+}
+
+func swap(manual []int, first int, second int) []int {
+	var firstIndex, secondIndex int
+	for i, pageNumber := range manual {
+		if pageNumber == first {
+			firstIndex = i
+		}
+
+		if pageNumber == second {
+			secondIndex = i
+		}
+	}
+
+	manual[firstIndex] = second
+	manual[secondIndex] = first
+
+	return manual
 }
