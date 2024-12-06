@@ -69,7 +69,7 @@ func mapLineToRule(line string) []int {
 
 	rule := make([]int, 2)
 
-	rule[0], err = strconv.Atoi(parts[0])
+	rule[0], _ = strconv.Atoi(parts[0])
 	if err != nil {
 		log.Fatal(err)
 	}
