@@ -1,3 +1,5 @@
+// INCOMPLETE -- PART 2 is incorrect
+
 package main
 
 import (
@@ -29,6 +31,7 @@ var grid Grid
 var blocks []Position
 var guard Guard
 
+var debug = false
 var autoStep = true
 
 var directionVectors = map[string]Vector{
@@ -45,11 +48,25 @@ var directionCharacters = map[string]string{
 	"RIGHT": ">",
 }
 
+var nextDirection = map[string]string{
+	"UP":    "RIGHT",
+	"DOWN":  "LEFT",
+	"LEFT":  "UP",
+	"RIGHT": "DOWN",
+}
+
 func (g Guard) cacheKey() string {
 	return fmt.Sprintf("%v-%v", g.position.x, g.position.y)
 }
 
+func (g Guard) fullCacheKey() string {
+	return fmt.Sprintf("%v-%v-%s", g.position.x, g.position.y, g.direction)
+}
+
 var guardHistory = map[string]bool{}
+var fullGuardHistory = map[string]bool{}
+
+var loopBlocks = map[string]bool{}
 
 func main() {
 	grid = Grid{util.OpenFileAsStringGrid("test.txt")}
@@ -73,18 +90,22 @@ func main() {
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for true {
-		clearTerminal()
-		grid.draw(guard)
-		fmt.Printf("[GUARD X:%v Y:%v]", guard.position.x, guard.position.y)
-		fmt.Printf("[GUARD DIR:%s]", guard.direction)
-		fmt.Printf("[GUARD STEPS:%v]", len(guardHistory))
+		if debug {
+			clearTerminal()
+			grid.draw(guard)
+			fmt.Printf("[GUARD X:%v Y:%v]", guard.position.x, guard.position.y)
+			fmt.Printf("[GUARD DIR:%s]", guard.direction)
+			fmt.Printf("[GUARD STEPS:%v]", len(guardHistory))
+		}
 
 		if guard.outOfBounds() {
 			clearTerminal()
 			fmt.Printf("Guard out of bounds after %v steps\n", len(guardHistory))
+			fmt.Printf("Found %v loop blocks\n", len(loopBlocks))
 			break
 		} else {
 			guardHistory[guard.cacheKey()] = true
+			fullGuardHistory[guard.fullCacheKey()] = true
 			guard.step()
 		}
 
@@ -102,28 +123,11 @@ func (g *Guard) step() {
 	}
 
 	g.position = g.position.applyVector(directionVectors[g.direction])
+	g.nextStepBlockedWouldCreateLoop()
 }
 
 func (g *Guard) turnRight() {
-	if g.direction == "UP" {
-		g.direction = "RIGHT"
-		return
-	}
-
-	if g.direction == "DOWN" {
-		g.direction = "LEFT"
-		return
-	}
-
-	if g.direction == "LEFT" {
-		g.direction = "UP"
-		return
-	}
-
-	if g.direction == "RIGHT" {
-		g.direction = "DOWN"
-		return
-	}
+	g.direction = nextDirection[g.direction]
 }
 
 func (g Guard) nextStepIsBlocked() bool {
@@ -157,6 +161,14 @@ func (g Grid) draw(guard Guard) {
 
 func (g Guard) outOfBounds() bool {
 	return g.position.x < 0 || g.position.x == len(grid.cells[0]) || g.position.y < 0 || g.position.y == len(grid.cells)
+}
+
+func (g Guard) nextStepBlockedWouldCreateLoop() {
+	g.turnRight()
+	if _, exists := fullGuardHistory[g.fullCacheKey()]; exists {
+		g.position = g.position.applyVector(directionVectors[g.direction])
+		loopBlocks[g.fullCacheKey()] = true
+	}
 }
 
 func clearTerminal() {
