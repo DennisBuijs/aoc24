@@ -14,9 +14,8 @@ type Equation struct {
 }
 
 type Node struct {
-	Value int
-	Left  *Node
-	Right *Node
+	Value    int
+	Children []*Node
 }
 
 var equations = []Equation{}
@@ -56,14 +55,8 @@ func main() {
 }
 
 func (e Equation) possible() bool {
-	fmt.Printf("\nTrying for %v\n", e.result)
-
 	tree := e.buildTree(1, e.values[0])
-	possible := tree.hasResult(e.result)
-	if possible {
-		fmt.Printf("%v is possible\n", e.result)
-	}
-	return possible
+	return tree.hasResult(e.result)
 }
 
 func (e Equation) buildTree(depth int, currentValue int) *Node {
@@ -75,9 +68,11 @@ func (e Equation) buildTree(depth int, currentValue int) *Node {
 
 	multiplyValue := currentValue * e.values[depth]
 	addValue := currentValue + e.values[depth]
+	concatValue := concatenateNumbers(currentValue, e.values[depth])
 
-	node.Left = e.buildTree(depth+1, multiplyValue)
-	node.Right = e.buildTree(depth+1, addValue)
+	node.Children = append(node.Children, e.buildTree(depth+1, multiplyValue))
+	node.Children = append(node.Children, e.buildTree(depth+1, addValue))
+	node.Children = append(node.Children, e.buildTree(depth+1, concatValue))
 
 	return node
 }
@@ -87,17 +82,41 @@ func (n *Node) hasResult(result int) bool {
 		return false
 	}
 
-	if n.Value == result {
-		return true
+	if len(n.Children) == 0 {
+		return n.Value == result
 	}
 
-	if n.Left.hasResult(result) {
-		return true
-	}
-
-	if n.Right.hasResult(result) {
-		return true
+	for _, child := range n.Children {
+		if child.hasResult(result) {
+			return true
+		}
 	}
 
 	return false
+}
+
+func concatenateNumbers(a, b int) int {
+	sa := strconv.Itoa(a)
+	sb := strconv.Itoa(b)
+
+	concatenated := sa + sb
+
+	result, err := strconv.Atoi(concatenated)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return result
+}
+
+func (n *Node) print(depth int) {
+	for i := 0; i < depth; i++ {
+		fmt.Print("--")
+	}
+
+	fmt.Printf("%v\n", n.Value)
+
+	for _, child := range n.Children {
+		child.print(depth + 1)
+	}
 }
