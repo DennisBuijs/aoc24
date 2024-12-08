@@ -26,3 +26,19 @@ func OpenFileAsStringGrid(path string) [][]string {
 
 	return grid
 }
+
+func OpenFileAsStringSlice(path string) []string {
+	file, err := os.Open(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	result := []string{}
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		result = append(result, scanner.Text())
+	}
+
+	return result
+}
