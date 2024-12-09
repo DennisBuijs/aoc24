@@ -25,12 +25,12 @@ type AntennaGroup struct {
 var grid = [][]string{}
 
 var antennaGroups = make(map[string]AntennaGroup)
-var antinodes = make(map[string]Position)
+var antinodes = make(map[Position]Position)
+
+var emptyVector = Vector{0, 0}
 
 func main() {
-	grid = util.OpenFileAsStringGrid("test.txt")
-
-	totalAntennas := 0
+	grid = util.OpenFileAsStringGrid("input.txt")
 
 	for y, row := range grid {
 		for x, cell := range row {
@@ -56,27 +56,21 @@ func main() {
 		}
 	}
 
-	for key, group := range antennaGroups {
-		totalAntennas += len(group.antennas)
+	for _, group := range antennaGroups {
 		for _, antenna := range group.antennas {
 			for _, otherAntenna := range group.antennas {
 				vector := antenna.position.getVector(otherAntenna.position)
+				otherVector := otherAntenna.position.getVector(antenna.position)
 
-				if vector.x == 0 && vector.y == 0 {
-					continue
+				antinodePosition := antenna.position.applyVector(vector)
+				otherAntinodePosition := otherAntenna.position.applyVector(otherVector)
+
+				if antinodePosition.inBounds() && vector != emptyVector {
+					antinodes[antinodePosition] = antinodePosition
 				}
 
-				group.vectors[vector] = vector
-			}
-		}
-
-		antennaGroups[key] = group
-
-		for _, antenna := range group.antennas {
-			for _, vector := range group.vectors {
-				antinodePosition := antenna.position.applyVector(vector)
-				if antinodePosition.inBounds() && !group.containsAntennaAtPosition(antinodePosition) {
-					antinodes[antinodePosition.cacheKey()] = antinodePosition
+				if otherAntinodePosition.inBounds() && otherVector != emptyVector {
+					antinodes[otherAntinodePosition] = otherAntinodePosition
 				}
 			}
 		}
@@ -111,8 +105,7 @@ func (p Position) cacheKey() string {
 func drawGrid(grid [][]string) {
 	for y, row := range grid {
 		for x, cell := range row {
-			cellKey := fmt.Sprintf("%v-%v", x, y)
-			if _, exists := antinodes[cellKey]; exists {
+			if _, exists := antinodes[Position{x, y}]; exists {
 				fmt.Print("#")
 			} else {
 				fmt.Print(cell)
