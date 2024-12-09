@@ -29,6 +29,8 @@ var antinodes = make(map[Position]Position)
 
 var emptyVector = Vector{0, 0}
 
+var totalAntennas = 0
+
 func main() {
 	grid = util.OpenFileAsStringGrid("input.txt")
 
@@ -58,26 +60,43 @@ func main() {
 
 	for _, group := range antennaGroups {
 		for _, antenna := range group.antennas {
+			totalAntennas++
 			for _, otherAntenna := range group.antennas {
 				vector := antenna.position.getVector(otherAntenna.position)
-				otherVector := otherAntenna.position.getVector(antenna.position)
-
 				antinodePosition := antenna.position.applyVector(vector)
-				otherAntinodePosition := otherAntenna.position.applyVector(otherVector)
 
-				if antinodePosition.inBounds() && vector != emptyVector {
-					antinodes[antinodePosition] = antinodePosition
+				if vector != emptyVector {
+					for antinodePosition.inBounds() {
+						antinodes[antinodePosition] = antinodePosition
+						antinodePosition = antinodePosition.applyVector(vector)
+					}
 				}
 
-				if otherAntinodePosition.inBounds() && otherVector != emptyVector {
-					antinodes[otherAntinodePosition] = otherAntinodePosition
+				otherVector := otherAntenna.position.getVector(antenna.position)
+				otherAntinodePosition := otherAntenna.position.applyVector(otherVector)
+
+				if otherVector != emptyVector {
+					for otherAntinodePosition.inBounds() {
+						antinodes[otherAntinodePosition] = otherAntinodePosition
+						otherAntinodePosition = otherAntinodePosition.applyVector(otherVector)
+					}
+				}
+			}
+		}
+	}
+
+	for _, an := range antinodes {
+		for _, g := range antennaGroups {
+			for _, a := range g.antennas {
+				if a.position == an {
+					totalAntennas--
 				}
 			}
 		}
 	}
 
 	drawGrid(grid)
-	fmt.Println(len(antinodes))
+	fmt.Println(len(antinodes) + totalAntennas)
 }
 
 func (this Position) getVector(other Position) Vector {
